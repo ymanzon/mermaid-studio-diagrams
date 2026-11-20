@@ -1,0 +1,29 @@
+sequenceDiagram
+    participant c2 as CheckoutWeb
+    participant c1 as Dispositivo movil
+    participant ms1 as AppEstadoDeCuenta
+    participant buss1 as BusMonedero
+    participant dat1 as DatMonedero
+    participant DB as DbContext
+    participant ms2 as PagosCommandService
+
+    opt Obtener o regenerar CCV 
+        c1->>ms1:ObtenerCCV(uidMonedero)
+        ms1->>buss1:BObtenerCCV(uidMonedero)
+        buss1->>dat1:DObtenerCCV(uidMonedero)
+        alt [TRY]
+          dat1->>DB:_dbContext.CCVMonedero.Where(x=>x.uidMonedero == uidMonedero).FirstOrDefaultAsync()
+          alt [SI CCV NOT FOUND o (CCV.DCREATEAT + CCV.EXPIRE < DateTime.Now)]
+            dat1-->>buss1:ERROR("Registro no existe.")
+          else [CCV aun es VALIDO]
+            dat1-->>buss1:CORRECTO(CCV)
+          end
+        else [CATCH]
+          dat1-->>buss1:ERROR("Ocurrio un error al obtener el registro.")
+        END
+    end
+
+    
+
+
+
