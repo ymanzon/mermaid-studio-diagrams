@@ -1,0 +1,33 @@
+{
+  "schema": "mermaid-studio.index.v1",
+  "updatedAt": "2026-11-20T21:53:22.601Z",
+  "diagrams": [
+    {
+      "id": "6579abef-86b7-4b8b-bac7-3033b42704d1",
+      "name": "clases",
+      "description": "",
+      "type": "journey",
+      "path": "diagrams/clases",
+      "createdAt": "2026-11-20T05:17:31.839Z",
+      "updatedAt": "2026-11-20T05:19:19.885Z"
+    },
+    {
+      "id": "dcd0d0cf-1dd5-4139-a230-9bb69401098f",
+      "name": "GenerarCVV",
+      "description": "",
+      "type": "sequenceDiagram",
+      "path": "diagrams/generarcvv",
+      "createdAt": "2026-11-20T15:54:23.510Z",
+      "updatedAt": "2026-11-20T21:48:37.836Z"
+    },
+    {
+      "id": "e30456a8-3929-4178-8a26-bba53e5caf91",
+      "name": "ValidarCCV",
+      "description": "",
+      "type": "sequenceDiagram",
+      "path": "diagrams/validarccv",
+      "createdAt": "2026-11-20T04:55:05.534Z",
+      "updatedAt": "2026-11-20T15:54:19.924Z"
+    }
+  ]
+}
