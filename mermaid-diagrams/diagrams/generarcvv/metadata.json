@@ -1,0 +1,11 @@
+{
+  "schema": "mermaid-studio.diagram-meta.v1",
+  "id": "dcd0d0cf-1dd5-4139-a230-9bb69401098f",
+  "name": "GenerarCVV",
+  "description": "",
+  "type": "sequenceDiagram",
+  "createdAt": "2026-11-20T15:54:23.510Z",
+  "updatedAt": "2026-11-20T21:48:37.836Z",
+  "file": "diagram.mmd",
+  "folder": "diagrams/generarcvv"
+}
