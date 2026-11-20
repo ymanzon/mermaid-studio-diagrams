@@ -1,0 +1,11 @@
+{
+  "schema": "mermaid-studio.diagram-meta.v1",
+  "id": "e30456a8-3929-4178-8a26-bba53e5caf91",
+  "name": "ValidarCCV",
+  "description": "",
+  "type": "sequenceDiagram",
+  "createdAt": "2026-11-20T04:55:05.534Z",
+  "updatedAt": "2026-11-20T15:54:19.924Z",
+  "file": "diagram.mmd",
+  "folder": "diagrams/validarccv"
+}
