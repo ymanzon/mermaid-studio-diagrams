@@ -7,23 +7,52 @@ sequenceDiagram
     participant DB as DbContext
     participant ms2 as PagosCommandService
 
-    opt Obtener o regenerar CCV 
-        c1->>ms1:ObtenerCCV(uidMonedero)
-        ms1->>buss1:BObtenerCCV(uidMonedero)
-        buss1->>dat1:DObtenerCCV(uidMonedero)
+    opt [GENERAR CVV]
+        c1->>ms1:POST	/api-movil/monederos/{idMonedero}/CVV
+        ms1->>buss1:BGenerarCVV(idMonedero)
+        buss1->>dat1:DObtenerCVV(idMonedero)
         alt [TRY]
-          dat1->>DB:_dbContext.CCVMonedero.Where(x=>x.uidMonedero == uidMonedero).FirstOrDefaultAsync()
-          alt [SI CCV NOT FOUND o (CCV.DCREATEAT + CCV.EXPIRE < DateTime.Now)]
-            dat1-->>buss1:ERROR("Registro no existe.")
-          else [CCV aun es VALIDO]
-            dat1-->>buss1:CORRECTO(CCV)
+          dat1->>dat1:fechaActual = DateTime.UtcNow()
+          dat1->>DB:_DbContext.CVVMonedero.Where(x=>x.uidMonedero == uidMonedero && x.DFechaExpiracion > fechaActual).FirstOrDefault()
+          DB-->>dat1:CVVMonedero
+          dat1-->>buss1:Response.SetSuccess(Map<EntCVV, CVVMonedero>(CVV))
+        else [CATCH]
+          dat1-->>buss1:Response.SetError("Ocurrio un error al obtener el registro.")
+        end
+
+        alt [Response.HasError == true] Error al obtener el CCV
+		      buss1-->>ms1:Response.SetError("Ocurrio un error al generar el CVV")
+          ms1-->>c1:Response.SetError("Ocurrio un error al generar el CVV")
+        else [Response.HasError == false && Response.Result != null] Se encontro un CVV aun no expirado
+          buss1->>buss1:CVV.ExpiraEn = (int)Math.Ceiling((CVV.FechaExpiracion - fechaActual).TotalSeconds);
+          buss1-->>ms1:Response.SetSuccess(CVV)
+          ms1-->>c1:Response.SetSuccess(CVV)
+        end
+
+        buss1-->>buss1: entCVV.idMonedero= idMonedero
+        buss1-->>buss1: entCVV.CVV = Random(100,999)
+        buss1-->>buss1: entCVV.fechaActual = DateTime.UtcNow()
+        buss1-->>buss1: entCVV.tiempoExpiracion = Parametros.Get("TIEMPO_EXPIRACION")
+        buss1-->>buss1: entCVV.fechaExpiracion = fechaActual.AddSeconds(tiempoExpiracion)
+        buss1->>dat1:DCrearCVV(entCVV);
+
+        alt [TRY]
+          dat1-->>DB:_DbContext.CVVMonedero.Add(CVVMonedero);
+          dat1-->>DB:affectedRecords = _DbContext.CVVMonedero.SaveChanges()
+
+          alt [affectedRecords > 0] Si se afectaron registros
+            dat1-->>buss1:Response.SetSuccess(Map<EntCCV, CVVMonedero>(CVVMonedero))
+          else [affectedRecords <= 0] si no se actualizaron registros
+            dat1-->>buss1:Response.SetError("Error al registrar el CVV")
           end
         else [CATCH]
-          dat1-->>buss1:ERROR("Ocurrio un error al obtener el registro.")
-        END
+          dat1-->>buss1: Response.SetError("No se pudo registrar el CVV del monedero.")
+        end
+
+        alt [Response.HasError == true]
+          buss1-->>ms1:Response.SetError(No se pudo generar el CVV)
+          ms1-->>c1:Response.SetError(No se pudo generar el CVV)
+        end
+        buss1-->>ms1:Response.SetSuccess(CVVMonedero)
+        ms1-->>c1:Response.SetSuccess(CVVMonedero)
     end
-
-    
-
-
-
