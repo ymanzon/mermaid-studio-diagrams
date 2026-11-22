@@ -7,39 +7,11 @@ sequenceDiagram
     participant DB as DbContext
     participant ms2 as PagosCommandService
 
-    opt Obtener o regenerar CCV 
-        c1->>ms1:ObtenerCCV(uidMonedero)
-        ms1->>buss1:BObtenerCCV(uidMonedero)
-        buss1->>dat1:DObtenerCCVPorMonedero(uidMonedero)
-        dat1-->>dat1:Debug()
-        alt [TRY]
-          dat1->>DB:_dbContext.CCVMonedero.Where(x=>x.uidMonedero == uidMonedero).FirstOrDefaultAsync()
-          alt si no retorna valor
-            dat1-->>buss1:null
-          else
-            dat1->>dat1:Map<EntCCV, CCVMonedero>(Response.Result)
-            dat1-->>buss1: Response<EntCCV>
-          end
-        else CATCH
-          dat1->>buss1:Message(Ocurrio un error al obtener el registro)
-        end
-        alt CCV se encontro o CCV existe y ya expiró
-            buss1->>buss1:ObtenerParametro(TIEMPO_EXPIRACION)
-            buss1->>buss1:GenerarCCV(uidMonedero, TIEMPO_EXPIRACION)
-            buss1->>dat1:DGuardar(CCV)
-            dat1->>DB:_dbContext.CCVMonedero.Add(CCV)
-            dat1->>DB:_dbContext.SaveChanges()
-            dat1-->>buss1:Result<CCVMonedero>
-        end
-        buss1-->>ms1:Response<EntCCV>
-        ms1-->>c1: Response<EntCCV>
-    end
-
     opt Validar CCV 
-        c2->>ms1: CValidarCCV(uidMonedero, CCV)
-        ms1->>buss1: BValidarCCV(uidMonedero, CCV)
-        buss1->>dat1: DObtenerCCVPorMonederoYCCV(uidMonedero,CCV)
-        dat1->>DB:_dbContext.CCVMonedero.Where(x=>x.uidMonedero == uidMonedero && x.CCV == CCV).FirstOrDefaultAsync()
+        c2->>ms1: POST	/api/monederos/{idMonedero}/cvv/validar {cvv:cvv}
+        ms1->>buss1: BValidarCCV(uidMonedero, cvv)
+        buss1->>dat1: DObtenerCCV(uidMonedero,cvv)
+        dat1->>DB:_dbContext.CCVMonedero.Where(x=>x.uidMonedero == uidMonedero && x.CCV == cvv).FirstOrDefaultAsync()
         dat1-->>dat1: Map<EntCCV, CCVMonedero>(Response.Result)
         dat1->>buss1:Response<EntCCV>
         alt CCV no existe o CCV existe y ya expiró
