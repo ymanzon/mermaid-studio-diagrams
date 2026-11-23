@@ -1,0 +1,11 @@
+{
+  "schema": "mermaid-studio.diagram-meta.v1",
+  "id": "6ccbe786-fa36-4384-bed7-4ad041ca4606",
+  "name": "ReplicaCVV",
+  "description": "",
+  "type": "sequenceDiagram",
+  "createdAt": "2026-11-23T16:31:07.805Z",
+  "updatedAt": "2026-11-23T17:35:26.960Z",
+  "file": "diagram.mmd",
+  "folder": "diagrams/replicacvv"
+}
