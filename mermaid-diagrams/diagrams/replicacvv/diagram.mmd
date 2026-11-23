@@ -1,0 +1,58 @@
+sequenceDiagram
+  participant rabbit as RABBIT
+  participant ms1 as AppEstadoCuentaQueryServices
+  participant not1 as NotificacionService
+  participant buss1 as BusMonedero
+  participant dat1 as DatMonedero
+  participant ctx as _DbContext.CVVMonederos
+
+  rabbit-->>ms1:SendReplicaCVV(CVVMonedero)
+  ms1-->>not1:_rabbitNotifications.ReceiveAsync(CVVMonedero)
+  not1->>buss1:BGuardarCVV(CVVMonedero)
+  buss1->>dat1:DBuscarCVV(CVVMonedero)
+
+  alt [TRY]
+    dat1->>dat1: _fechaActual = DateTime.UtcNow()
+    dat1->>ctx: _CVVMonedero = CVVMonedero.Where(x=>x.id == _id && x.DFechaExpiracion > _fechaActual).FirstOrDefault()
+    dat1->>dat1: _CVV = Map<EntCVV, CVVMonedero>(_CVVMonedero)
+    dat1-->>buss1: Response.Success(_CVV)
+  else [CATCH]
+    dat1-->>buss1:Response.Error(No se pudo obtener el registro)
+  end
+
+  alt [Response.HasError == true, Si ocurrio algun error]
+    buss1-->>not1:Response.Error("Ocurrio un error.")
+    not1-->>ms1:
+    ms1-->>rabbit:
+  end
+
+  alt [Response.HasError == false && Response.Result != null,Si retorno algun registro en la busqueda]
+    buss1-->>not1:Response.Success("El registro ya fue agregado previamente")
+    not1-->>ms1:
+    ms1-->>rabbit:
+  end
+  
+  buss1->>buss1: _envCVV = Map<CVVMonedero, EntCVV>(EntCvv)
+  buss1->>dat1: DGuardarCVV(CVVMonedero)
+  alt [TRY]
+    dat1->>ctx:CVVMonedero:Add(CVVMonedero)
+    dat1->>ctx: affectedRecords = SaveChanges();
+    alt [affectedRecords == 0]
+      dat1-->>buss1:Response.Error("No se pudo agregar el registro")
+      buss1-->>not1:Response.Error("No se agrego el registro")
+      not1-->>ms1:
+      ms1-->>rabbit:
+    end
+    dat1-->>buss1:Response.Success(true)
+    buss1-->>not1:
+    not1-->>ms1:
+    ms1-->>rabbit:
+    
+  else [CATCH]
+    dat1-->>buss1:Response.Error("Ocurrio un error al intentar guardar el registro")
+    buss1-->>not1:
+    not1-->>ms1:
+    ms1-->>rabbit:
+  end
+  
+  
