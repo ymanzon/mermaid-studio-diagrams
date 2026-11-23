@@ -1,6 +1,6 @@
 {
   "schema": "mermaid-studio.index.v1",
-  "updatedAt": "2026-11-22T20:47:11.122Z",
+  "updatedAt": "2026-11-23T17:38:38.382Z",
   "diagrams": [
     {
       "id": "6579abef-86b7-4b8b-bac7-3033b42704d1",
@@ -18,7 +18,16 @@
       "type": "sequenceDiagram",
       "path": "diagrams/generarcvv",
       "createdAt": "2026-11-20T15:54:23.510Z",
-      "updatedAt": "2026-11-21T00:38:30.601Z"
+      "updatedAt": "2026-11-23T16:03:44.348Z"
+    },
+    {
+      "id": "6ccbe786-fa36-4384-bed7-4ad041ca4606",
+      "name": "ReplicaCVV",
+      "description": "",
+      "type": "sequenceDiagram",
+      "path": "diagrams/replicacvv",
+      "createdAt": "2026-11-23T16:31:07.805Z",
+      "updatedAt": "2026-11-23T17:35:26.960Z"
     },
     {
       "id": "e30456a8-3929-4178-8a26-bba53e5caf91",
@@ -27,7 +36,7 @@
       "type": "sequenceDiagram",
       "path": "diagrams/validarccv",
       "createdAt": "2026-11-20T04:55:05.534Z",
-      "updatedAt": "2026-11-21T00:37:29.147Z"
+      "updatedAt": "2026-11-23T16:03:25.592Z"
     }
   ]
 }
