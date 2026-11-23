@@ -1,11 +1,12 @@
 sequenceDiagram
     participant c2 as CheckoutWeb
     participant c1 as Dispositivo movil
-    participant ms1 as AppEstadoDeCuenta
+    participant ms1 as AppEstadoDeCuentaCommandService
     participant buss1 as BusMonedero
     participant dat1 as DatMonedero
     participant DB as DbContext
     participant ms2 as PagosCommandService
+    participant rabbit as RABBIT
 
     opt [GENERAR CVV]
         c1->>ms1:POST	/api-movil/monederos/{idMonedero}/CVV
@@ -30,7 +31,7 @@ sequenceDiagram
         end
 
         buss1-->>buss1: entCVV.idMonedero= idMonedero
-        buss1-->>buss1: entCVV.CVV = Random(100,999)
+        buss1-->>buss1: entCVV.CVV = String.FillLeft(Random(0,999), 3, "0")
         buss1-->>buss1: entCVV.fechaActual = DateTime.UtcNow()
         buss1-->>buss1: entCVV.tiempoExpiracion = Parametros.Get("TIEMPO_EXPIRACION")
         buss1-->>buss1: entCVV.fechaExpiracion = fechaActual.AddSeconds(tiempoExpiracion)
@@ -53,6 +54,8 @@ sequenceDiagram
           buss1-->>ms1:Response.SetError(No se pudo generar el CVV)
           ms1-->>c1:Response.SetError(No se pudo generar el CVV)
         end
+        buss1->>rabbit:SendCVVQuery(CVVMonedero)
+        rabbit-->>buss1:
         buss1-->>ms1:Response.SetSuccess(CVVMonedero)
         ms1-->>c1:Response.SetSuccess(CVVMonedero)
     end
