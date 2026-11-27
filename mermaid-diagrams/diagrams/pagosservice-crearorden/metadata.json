@@ -1,0 +1,11 @@
+{
+  "schema": "mermaid-studio.diagram-meta.v1",
+  "id": "53bd7b00-228b-4a8b-9e5f-f4adb04a27c6",
+  "name": "PagosService.CrearOrden",
+  "description": "",
+  "type": "sequenceDiagram",
+  "createdAt": "2026-11-26T19:18:35.549Z",
+  "updatedAt": "2026-11-27T00:11:27.343Z",
+  "file": "diagram.mmd",
+  "folder": "diagrams/pagosservice-crearorden"
+}
