@@ -1,27 +1,125 @@
 sequenceDiagram
-    participant c2 as CheckoutWeb
-    participant c1 as Dispositivo movil
-    participant ms1 as AppEstadoDeCuentaQueryService
-    participant buss1 as BusMonedero
-    participant dat1 as DatMonedero
-    participant DB as DbContext
-    participant ms2 as PagosCommandService
+  box clientes
+  	participant c2 as CheckoutWeb
+  end
+  box AppEstadoDeCuentaQueryService
+    participant ctrl as MonederoController
+	  participant buss1 as BusMonedero
+	  participant dat1 as DatMonedero
+	  participant ctx as DbContext
+  end
+  autonumber
 
-    opt Validar CCV 
-        c2->>ms1: POST	/api/monederos/{idMonedero}/cvv/validar {cvv:cvv}
-        ms1->>buss1: BValidarCCV(uidMonedero, cvv)
-        buss1->>dat1: DObtenerCCV(uidMonedero,cvv)
-        dat1->>DB:_dbContext.CCVMonedero.Where(x=>x.uidMonedero == uidMonedero && x.CCV == cvv).FirstOrDefaultAsync()
-        dat1-->>dat1: Map<EntCCV, CCVMonedero>(Response.Result)
-        dat1->>buss1:Response<EntCCV>
-        alt CCV no existe o CCV existe y ya expiró
-            buss1-->>ms1:Error("CCV no válido")
-            ms1-->>c2:Error("CCV no válido")
-        else
-            buss1-->>ms1:Success("CCV válido")
-            ms1-->>c2:Success("CCV válido")
-        end
+	opt Validar CCV 
+    rect rgb(225, 240, 255)
+		c2->>ctrl: POST	/api/monederos/{idMonedero}/cvv/validar {cvv:_cvv}
+		ctrl->>buss1: BValidarCCV(uidMonedero, _cvv)
+    buss1->>buss1: _fechaActual = DateTime.UtcNow()
+		buss1->>dat1: DObtenerCCVActivo(uidMonedero, _fechaActual)
     end
 
+    alt [TRY]
+    rect rgb(225, 240, 255)
+      dat1->>ctx: row = CCVMonedero.Where(x=>x.uidMonedero == uidMonedero).FirstOrDefaultAsync()
+      dat1-->>buss1: Response.Success( Map<EntCVV, CVVMonedero>(row) )
+     end
+    else [CATCH]
+      dat1-->>c2: Response.Error(Ocurrio un error al obtener el registro del monedero)
+    end
 
+    %Validar si no ocurrio un error en data%
+    alt [Response.HasError == true, Ocurrio un error en el Data]
+      buss1-->>ctrl: Response.Error(Ocurrio un error al obtener el cvv del monedero)
+      ctrl-->>c2:
+    end
+    
+    %validar estatus del ciclo%
+    rect rgb(225, 240, 255)
+    buss1->>buss1:_intentosCiclo = getParam(INTENTOS_CICLO)
+    alt [_CVV.IntentosCiclo >= _intentosCiclo && _CVV.FechaVigencia <= DateTime.now, si ya se gasto sus intentos de este ciclo, pero aun no llega la fecha de vigencia]
+      buss1->>buss1:_CVV.ContadorConsecutivoAcumulado++
+      buss1->>dat1:DActualizar(_CVV)
+      dat1->>ctx:affectedRows = CVVMonedero.UpdateCommandExecute(_CVV)
+      alt [Si no se pudo actualizar el _CVV]
+        dat1->>c2:Response.Error(Ocurrio un error al actualizar)
+      end
+      buss1-->>ctrl:Response.Error(La actualizacion no pudo realizarse satisfactoriamente)
+      ctrl-->>c2:
+    end
+    end
 
+    rect rgb(225, 240, 255)
+    alt [_CVV.IntentosCiclo >= _intentosCiclo && _CVV.FechaVigencia > DateTime.now, si ya ha superado todos los intentos y ya paso la fecha de vigencia]
+      buss1->>buss1: _CVV.IntentosCiclo = 0 
+      buss1->>buss1:_CVV.FechaVigencia = null
+      buss1->>dat1: DActualizar(_CVV)
+      dat1-->>buss1:
+    end 
+    end
+
+    %si retorna un registro, validar con el enviado%
+    buss1->>buss1: _CVV = Response.Result
+    alt [_CVV.notEquals(_cvv), si el cvv no es igual al enviado] 
+
+      alt [_CVV.IntentosCiclo == 0]  %Ciclo de reintentos: primer ciclo%
+        buss1->>buss1:_tiempoVigencia = getParam(TIEMPO_VIGENCIA)
+        buss1->>buss1:_CVV.FechaVigencia = DateTime.now.Add(_tiempoVigencia)
+        buss1->>buss1:_CVV.IntentosCiclo = 1
+        buss1->>dat1:DActualizar(_CVV)
+        
+        alt [TRY]
+          dat1->>ctx:affectedRows = CVVMonedero.UpdateCommandExecute(_CVV)
+          alt [affectedRows == 0 ,Si no afecto registros]
+            dat1-->>buss1: Response.Error(No se pudo actualizar el registro)
+          end
+            dat1-->>buss1: Response.Success(true)
+        else [CATCH]
+          dat1-->>buss1:Response.Error(Ocurrio un error al actualizar el registro)
+        end
+
+        alt [Response.HasError == true]
+          buss1->>ctrl:Response.Error(Ocurrio un error al actualizar el registro)
+          ctrl-->>c2:
+        end
+        buss1-->>ctrl:Response.Success(true)
+        ctrl-->>c2:
+      end  %Ciclo de reintentos: primer ciclo%
+
+      buss1->>buss1:_intentosCiclo = getParam(INTENTOS_CICLO)
+
+      alt [_CVV.IntentosCiclo > 0 && _CVV.IntentosCiclo < _intentosCiclo ] %Son los intentos restantes%
+        buss1->>buss1: _CVV.IntentosCiclo++
+        buss1->>dat1:DActualizar(_CVV)
+
+        alt [TRY]
+          dat1->>ctx:affectedRows = CVMonedero.UpdateCommandExecute(_CVV)
+          
+          alt [affectedRows == 0]
+            dat1-->>buss1:Response.Error(Ocurrio un error al actualizar el registro)
+            buss1-->>ctrl:Response.Error(Ocurrio un error al validar el registro)
+            ctrl->>c2:
+          end
+          dat1-->>buss1:Response.Success(true)
+        else [CATCH]
+            dat1-->>buss1:Response.Error(Ocurrio un error al actualizar el registro)
+            buss1-->>ctrl:Response.Error(Ocurrio un error al validar el registro)
+            ctrl->>c2:
+        end
+
+      end %Los intentos restantes%
+
+      buss1->>buss1:_tiempoVigencia = getParam(TIEMPO_VIGENCIA)
+      buss1->>buss1:_CVV.FechaVigencia = DateTime.now.Add(_tiempoVigencia)
+      buss1->>buss1:_CVV.IntentosCiclo = _CV.IntentosCiclo
+      buss1->>buss1:_CVV.ContadorConsecutivoAcumulado = _CVV.ContadorConsecutivoAcumulado 
+    
+      %validacion del intentos por ciclo%
+      alt [_CVV.IntentosCiclo >= _intentosCiclo]
+        buss1->>buss1: _CVV.IntentosCiclo = 0 
+      end
+
+    end
+
+		buss1-->>ctrl:Success("CCV válido")
+		ctrl-->>c2:Success("CCV válido")
+	end
