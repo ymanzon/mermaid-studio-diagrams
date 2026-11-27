@@ -1,0 +1,20 @@
+flowchart TD
+
+  A[Inicio] --> B["api/monederos/{idMonedero}/cvv/validar {cvv:_cvv}"]
+  B-->C["CValidarCVV(monedero, _cvv)"]
+
+  subgraph "DObtenerCCVActivo(monedero)"
+    C-->E["where(x=>x.monedero == monedero)"]
+    E-->F{se encontro un cvv activo para el monedero}
+    F-->|SI| H{el cvv encontrado es igual al que se requiere validar. }
+    H-->|SI| G[Response.Success]
+    F-->|NO| I["Response.Error"]
+    I-->J
+  end
+    
+  classDef controller fill:#dbeafe,stroke:#2563eb,color:#1e3a8a
+  classDef bussines fill:#dbeaaa,stroke:#2103eb,color:#1e3ad2
+  classDef data fill:#dbeafe,stroke:#2563eb,color:#1e3aac
+
+  class B controller
+  class C bussines
