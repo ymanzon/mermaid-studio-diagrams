@@ -1,6 +1,6 @@
 {
   "schema": "mermaid-studio.index.v1",
-  "updatedAt": "2026-11-23T17:38:38.382Z",
+  "updatedAt": "2026-11-27T00:26:39.353Z",
   "diagrams": [
     {
       "id": "6579abef-86b7-4b8b-bac7-3033b42704d1",
@@ -21,6 +21,33 @@
       "updatedAt": "2026-11-23T16:03:44.348Z"
     },
     {
+      "id": "7764598d-ad36-4d07-9024-8e1b04494a91",
+      "name": "Nuevo diagrama",
+      "description": "",
+      "type": "flowchart",
+      "path": "diagrams/nuevo-diagrama",
+      "createdAt": "2026-11-24T17:51:19.349Z",
+      "updatedAt": "2026-11-24T20:54:54.141Z"
+    },
+    {
+      "id": "6365e781-596d-4633-9c36-416cc5e1f5eb",
+      "name": "Nuevo diagrama",
+      "description": "",
+      "type": "flowchart",
+      "path": "diagrams/nuevo-diagrama-2",
+      "createdAt": "2026-11-24T17:44:41.701Z",
+      "updatedAt": "2026-11-24T17:51:13.468Z"
+    },
+    {
+      "id": "53bd7b00-228b-4a8b-9e5f-f4adb04a27c6",
+      "name": "PagosService.CrearOrden",
+      "description": "",
+      "type": "sequenceDiagram",
+      "path": "diagrams/pagosservice-crearorden",
+      "createdAt": "2026-11-26T19:18:35.549Z",
+      "updatedAt": "2026-11-27T00:11:27.343Z"
+    },
+    {
       "id": "6ccbe786-fa36-4384-bed7-4ad041ca4606",
       "name": "ReplicaCVV",
       "description": "",
@@ -36,7 +63,16 @@
       "type": "sequenceDiagram",
       "path": "diagrams/validarccv",
       "createdAt": "2026-11-20T04:55:05.534Z",
-      "updatedAt": "2026-11-23T16:03:25.592Z"
+      "updatedAt": "2026-11-24T17:31:26.982Z"
+    },
+    {
+      "id": "34b52f30-474b-461f-a964-1248ef79556a",
+      "name": "ValidarCCV (copia)",
+      "description": "",
+      "type": "sequenceDiagram",
+      "path": "diagrams/validarccv-copia",
+      "createdAt": "2026-11-24T17:31:31.070Z",
+      "updatedAt": "2026-11-24T17:44:21.964Z"
     }
   ]
 }
