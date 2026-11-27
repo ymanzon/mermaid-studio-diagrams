@@ -1,0 +1,99 @@
+
+flowchart TD
+    START([Inicio])
+    END([Fin])
+
+    START --> A["CheckoutWeb / Dispositivo móvil<br/>POST /api/monederos/{idMonedero}/cvv/validar"]
+    A --> B["MonederoController<br/>BValidarCCV(uidMonedero, _cvv)"]
+    B --> C["BusMonedero<br/>_fechaActual = DateTime.UtcNow()"]
+    C --> D["DatMonedero<br/>DObtenerCCVActivo(uidMonedero, _fechaActual)"]
+
+    subgraph CONSULTA["1. Consulta del CCV"]
+        D --> E["TRY: Consultar CCVMonedero<br/>por uidMonedero"]
+        E --> F["Mapear registro<br/>Response.Success(EntCVV)"]
+        E --> G["CATCH: Error al obtener<br/>registro del monedero"]
+        G --> H["Response.Error"]
+        F --> I{"¿Response.HasError?"}
+        H --> I
+        I -->|Sí| ERR1["Retornar error:<br/>No se pudo obtener el CCV"]
+        I -->|No| J["Obtener INTENTOS_CICLO"]
+    end
+
+    subgraph CICLO["2. Validación del ciclo de intentos"]
+        J --> K{"¿IntentosCiclo >=<br/>_intentosCiclo?"}
+
+        K -->|No| N["Continuar validación"]
+        K -->|Sí| L{"¿FechaVigencia<br/><= DateTime.now?"}
+
+        L -->|Sí| M["ContadorConsecutivoAcumulado++<br/>DActualizar(_CVV)"]
+        M --> ERR2["Retornar error:<br/>La validación no pudo realizarse<br/>satisfactoriamente"]
+
+        L -->|No| O{"¿FechaVigencia<br/>> DateTime.now?"}
+        O -->|Sí| P["IntentosCiclo = 0<br/>FechaVigencia = null"]
+        P --> Q["DActualizar(_CVV)"]
+        Q --> N
+        O -->|No| N
+    end
+
+    subgraph VALIDACION["3. Validación del CVV enviado"]
+        N --> R["_CVV = Response.Result"]
+        R --> S{"¿_CVV es diferente<br/>de _cvv enviado?"}
+
+        S -->|No| Z["Continuar a validación final"]
+        S -->|Sí| T{"¿IntentosCiclo == 0?"}
+
+        T -->|Sí| U["Obtener TIEMPO_VIGENCIA<br/>FechaVigencia = DateTime.now + tiempo<br/>IntentosCiclo = 1"]
+
+        T -->|No| W["Consultar INTENTOS_CICLO"]
+
+        U --> V["DActualizar(_CVV)<br/>TRY: UpdateCommandExecute(_CVV)"]
+        V --> V1{"¿affectedRows == 0?"}
+        V1 -->|Sí| ERR3["Error: No se pudo actualizar<br/>el registro"]
+        V1 -->|No| V2["Response.Success(true)"]
+        V -->|Excepción| ERR4["CATCH: Error al actualizar<br/>el registro"]
+        V2 --> W
+
+        W --> X{"¿IntentosCiclo > 0<br/>y menor que _intentosCiclo?"}
+        X -->|Sí| Y["IntentosCiclo++"]
+        X -->|No| AA["Continuar"]
+
+        Y --> AB["DActualizar(_CVV)<br/>TRY: UpdateCommandExecute(_CVV)"]
+        AB --> AC{"¿affectedRows == 0?"}
+        AC -->|Sí| ERR5["Error al validar el registro"]
+        AC -->|No| AD["Response.Success(true)"]
+        AB -->|Excepción| ERR6["CATCH: Error al actualizar<br/>el registro"]
+
+        AD --> AA
+        AA --> AE["Obtener TIEMPO_VIGENCIA<br/>FechaVigencia = DateTime.now + tiempo<br/>Conservar IntentosCiclo<br/>Conservar ContadorConsecutivoAcumulado"]
+        AE --> AF{"¿IntentosCiclo >=<br/>_intentosCiclo?"}
+        AF -->|Sí| AG["IntentosCiclo = 0"]
+        AF -->|No| Z
+        AG --> Z
+    end
+
+    subgraph VALIDACION_FINAL["4. Consulta y validación final del CCV"]
+        Z --> AH["Consultar CCVMonedero<br/>por uidMonedero"]
+        AH --> AI["Mapear EntCCV"]
+        AI --> AJ{"¿CCV no existe<br/>o está expirado?"}
+        AJ -->|Sí| ERR7["Error: CCV no válido"]
+        AJ -->|No| OK["Success: CCV válido"]
+    end
+
+    ERR1 --> END
+    ERR2 --> END
+    ERR3 --> END
+    ERR4 --> END
+    ERR5 --> END
+    ERR6 --> END
+    ERR7 --> END
+    OK --> END
+
+    classDef error fill:#fee2e2,stroke:#dc2626,color:#991b1b
+    classDef success fill:#dcfce7,stroke:#16a34a,color:#166534
+    classDef decision fill:#fef3c7,stroke:#d97706,color:#92400e
+    classDef process fill:#dbeafe,stroke:#2563eb,color:#1e3a8a
+
+    class ERR1,ERR2,ERR3,ERR4,ERR5,ERR6,ERR7 error
+    class OK success
+    class I,K,L,O,S,T,V1,X,AC,AF,AJ decision
+    class B,C,D,E,F,J,R,U,V,W,Y,AB,AE,AG,AH,AI process
