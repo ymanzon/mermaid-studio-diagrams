@@ -1,0 +1,47 @@
+sequenceDiagram
+    actor usuario
+    participant checkout AS CHECKOUT WEB
+    participant api AS PagosCommandService
+    participant validador AS validadorCVV
+
+    usuario->>checkout:
+    alt SI usuario ingresa numero 1
+      checkout-->>usuario: solicitar correo-e
+    else SI ingresa otro numero
+      checkout-->>usuario:solicitar cvv
+    end
+    usuario->>checkout:ingresar valor adicional
+    usuario->>checkout:enviar valores
+    checkout->>api:enviar informacion
+    api->>validador:validar informacion segun modalidad
+  
+    alt si es Tarjetas físicas 
+      validador->>validador: validar(numeroTarjeta, cvv)
+    else si es Tarjetas virtuales 
+      validador->>validador: validar(numeroTarjeta, correo)
+    end
+
+    alt validacion correcta
+      validador-->>api:true
+      api->>api: continuar el proceso de creacion de ordenes
+      api-->>checkout:
+      checkout-->>usuario:
+    else validacion incorrecta
+      rect rgb(250,150,100)
+        validador->>validador:'Contador consecutivo acumulado'++
+      alt es primer intento
+        validador->>validador: iniciar 'Contador de intentos permitidos'
+        validador->>validador: iniciar 'Periodo de vigencia'
+      end
+      alt Se alcanzo numero maximo de intentos del periodo
+        validador->>validador:error(La validación no pudo realizarse satisfactoriamente)
+      end
+      end
+      validador-->>api:false
+      api-->>checkout:
+      checkout-->>usuario: 
+    end
+    
+
+
+    
